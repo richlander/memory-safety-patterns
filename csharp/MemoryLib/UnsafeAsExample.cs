@@ -9,6 +9,7 @@
 // so callers don't need unsafe blocks.
 
 using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace MemoryLib;
@@ -38,7 +39,7 @@ public static class UnsafeAsExample
 
         // Unsafe.As reinterprets without any runtime checks
         // No unsafe block needed!
-        object[] objects = Unsafe.As<string[], object[]>(strings);
+        object[] objects = Unsafe.As<string[], object[]>(ref strings);
 
         Console.WriteLine("Unsafe.As<string[], object[]> - no unsafe block needed:");
         Console.WriteLine($"  Original: string[{strings.Length}]");

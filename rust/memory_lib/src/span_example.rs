@@ -216,6 +216,49 @@ pub fn demonstrate_safe_access() {
     println!();
 }
 
+/// THE COMPELLING CASE: Methods that RETURN slices.
+///
+/// Returning a slice allows callers to get a safe, bounds-checked view
+/// into internal state. Rust's lifetime system ensures the slice cannot
+/// outlive the data it references - enforced at COMPILE TIME.
+pub fn demonstrate_returning_slices() {
+    println!("--- Returning Slices (The Compelling Case) ---");
+
+    let container = DataContainer::new(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+
+    // Get safe views into the container's internal data
+    // The lifetime system ensures these can't outlive `container`
+    let first_half = container.first_half();
+    let last_half = container.last_half();
+
+    println!("First half: {:?}", first_half);
+    println!("Last half: {:?}", last_half);
+
+    // Mutable access - Rust ensures exclusive access at compile time
+    let mut mutable_container = DataContainer::new(vec![1, 2, 3, 4, 5]);
+    {
+        let slice = mutable_container.first_half_mut();
+        slice[0] = 100;
+    }
+    println!("After mutation: {:?}", mutable_container.as_slice());
+
+    // Subslicing with bounds checking
+    if let Some(range) = container.get_range(2, 6) {
+        println!("Range [2..6]: {:?}", range);
+    }
+
+    // The following would NOT compile - Rust prevents use-after-free:
+    // let dangling: &[i32];
+    // {
+    //     let temp_container = DataContainer::new(vec![1, 2, 3]);
+    //     dangling = temp_container.as_slice();
+    // } // temp_container dropped here
+    // println!("{:?}", dangling); // ERROR: borrowed value does not live long enough
+
+    println!("Rust's lifetime system prevents returning dangling slices!");
+    println!();
+}
+
 // Helper functions that work with slices
 
 fn sum(slice: &[i32]) -> i32 {
@@ -245,6 +288,7 @@ pub fn run_all_demonstrations() {
     demonstrate_lifetime_safety();
     demonstrate_iteration();
     demonstrate_safe_access();
+    demonstrate_returning_slices();
     demonstrate_contrast_with_pointers();
 
     println!("--- Summary ---");
@@ -252,8 +296,80 @@ pub fn run_all_demonstrations() {
     println!("- Safe, bounds-checked memory access");
     println!("- Zero-copy slicing and views");
     println!("- COMPILE-TIME lifetime guarantees (unique to Rust)");
+    println!("- Can be RETURNED from methods - lifetime-checked!");
     println!("- Rich iteration and transformation APIs");
     println!("- The safe alternative to raw pointer manipulation");
+}
+
+/// Example struct that RETURNS slices into its internal data.
+///
+/// This demonstrates the compelling use case: exposing internal state
+/// safely without copying. Rust's lifetime annotations ensure the
+/// returned slices cannot outlive the container.
+pub struct DataContainer {
+    data: Vec<i32>,
+}
+
+impl DataContainer {
+    pub fn new(data: Vec<i32>) -> Self {
+        Self { data }
+    }
+
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.data.is_empty()
+    }
+
+    /// Returns a slice over the entire data.
+    ///
+    /// SAFETY DISCHARGE: This is safe because:
+    /// - The lifetime `'_` ties the returned slice to `&self`
+    /// - Rust's borrow checker ensures the slice cannot outlive self
+    /// - No unsafe code involved
+    pub fn as_slice(&self) -> &[i32] {
+        &self.data
+    }
+
+    /// Returns a slice over the first half.
+    ///
+    /// SAFETY DISCHARGE:
+    /// - Bounds computed from self.data.len(), always valid
+    /// - Lifetime tied to &self by return type
+    pub fn first_half(&self) -> &[i32] {
+        let mid = self.data.len() / 2;
+        &self.data[..mid]
+    }
+
+    /// Returns a slice over the last half.
+    ///
+    /// SAFETY DISCHARGE: Same as first_half.
+    pub fn last_half(&self) -> &[i32] {
+        let mid = self.data.len() / 2;
+        &self.data[mid..]
+    }
+
+    /// Returns a mutable slice over the first half.
+    ///
+    /// SAFETY DISCHARGE:
+    /// - &mut self ensures exclusive access (no aliasing)
+    /// - Lifetime tied to &mut self
+    /// - Bounds are valid
+    pub fn first_half_mut(&mut self) -> &mut [i32] {
+        let mid = self.data.len() / 2;
+        &mut self.data[..mid]
+    }
+
+    /// Returns a slice over a specified range, with bounds checking.
+    ///
+    /// SAFETY DISCHARGE:
+    /// - Returns None for invalid ranges (no panic, no UB)
+    /// - Uses get() which is bounds-checked
+    pub fn get_range(&self, start: usize, end: usize) -> Option<&[i32]> {
+        self.data.get(start..end)
+    }
 }
 
 #[cfg(test)]

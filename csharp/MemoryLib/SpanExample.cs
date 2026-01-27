@@ -220,6 +220,42 @@ public static class SpanExample
         Console.WriteLine();
     }
 
+    /// <summary>
+    /// THE COMPELLING CASE: Methods that RETURN Spans.
+    ///
+    /// Returning a Span allows callers to get a safe, bounds-checked view
+    /// into internal state without copying and without exposing pointers.
+    /// </summary>
+    public static void DemonstrateReturningSpans()
+    {
+        Console.WriteLine("--- Returning Spans (The Compelling Case) ---");
+
+        var container = new DataContainer([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+
+        // Get a safe view into the container's internal data
+        // No copying, no pointers exposed, fully bounds-checked
+        Span<int> firstHalf = container.GetFirstHalf();
+        Span<int> lastHalf = container.GetLastHalf();
+        ReadOnlySpan<int> readOnlyView = container.AsReadOnlySpan();
+
+        Console.WriteLine($"First half: [{string.Join(", ", firstHalf.ToArray())}]");
+        Console.WriteLine($"Last half: [{string.Join(", ", lastHalf.ToArray())}]");
+
+        // Modify through the returned span - changes the container
+        firstHalf[0] = 100;
+        Console.WriteLine($"After firstHalf[0] = 100, container[0] = {container[0]}");
+
+        // ReadOnlySpan prevents modification
+        // readOnlyView[0] = 999; // Compile error!
+        Console.WriteLine($"ReadOnly view[0] = {readOnlyView[0]}");
+
+        // Subslicing - get a view of a view
+        Span<int> subSlice = container.GetRange(2, 4);
+        Console.WriteLine($"Range [2..6]: [{string.Join(", ", subSlice.ToArray())}]");
+
+        Console.WriteLine();
+    }
+
     // Helper functions that work with Span
 
     private static int Sum(ReadOnlySpan<int> span)
@@ -265,6 +301,7 @@ public static class SpanExample
         DemonstrateSlicing();
         DemonstrateFunctionParameters();
         DemonstrateReadOnlySpan();
+        DemonstrateReturningSpans();
         DemonstrateContrastWithPointers();
 
         Console.WriteLine("--- Summary ---");
@@ -273,6 +310,73 @@ public static class SpanExample
         Console.WriteLine("- Zero-copy slicing and views");
         Console.WriteLine("- Works with arrays, stack memory, and native memory");
         Console.WriteLine("- Cannot escape to heap (ref struct)");
+        Console.WriteLine("- Can be RETURNED from methods - the compelling case!");
         Console.WriteLine("- The safe alternative to pointer manipulation");
+    }
+}
+
+/// <summary>
+/// Example class that RETURNS Spans into its internal data.
+///
+/// This demonstrates the compelling use case: exposing internal state
+/// safely without copying and without pointers.
+/// </summary>
+public class DataContainer
+{
+    private readonly int[] _data;
+
+    public DataContainer(int[] data)
+    {
+        _data = data ?? throw new ArgumentNullException(nameof(data));
+    }
+
+    public int Length => _data.Length;
+
+    public int this[int index] => _data[index];
+
+    /// <summary>
+    /// Returns a Span over the first half of the data.
+    ///
+    /// SAFETY DISCHARGE: This is safe because:
+    /// - _data is readonly and cannot be replaced
+    /// - Span's ref struct nature prevents it from outliving this container
+    ///   in typical usage (cannot be stored in fields)
+    /// - Bounds are computed from _data.Length, guaranteed valid
+    /// </summary>
+    public Span<int> GetFirstHalf()
+    {
+        return _data.AsSpan(0, _data.Length / 2);
+    }
+
+    /// <summary>
+    /// Returns a Span over the last half of the data.
+    ///
+    /// SAFETY DISCHARGE: Same as GetFirstHalf - bounds computed safely.
+    /// </summary>
+    public Span<int> GetLastHalf()
+    {
+        int midpoint = _data.Length / 2;
+        return _data.AsSpan(midpoint, _data.Length - midpoint);
+    }
+
+    /// <summary>
+    /// Returns a Span over a specified range.
+    ///
+    /// SAFETY DISCHARGE: Safe because AsSpan validates start/length
+    /// and throws ArgumentOutOfRangeException for invalid ranges.
+    /// </summary>
+    public Span<int> GetRange(int start, int length)
+    {
+        return _data.AsSpan(start, length);
+    }
+
+    /// <summary>
+    /// Returns a read-only view of all data.
+    ///
+    /// SAFETY DISCHARGE: Safe - returns immutable view of valid array.
+    /// </summary>
+    public ReadOnlySpan<int> AsReadOnlySpan()
+    {
+        return _data.AsSpan();
     }
 }

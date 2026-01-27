@@ -116,6 +116,14 @@ pub unsafe fn unsafe_write(ptr: *mut i32, offset: usize, value: i32) {
 /// can use it without any `unsafe` blocks.
 ///
 /// CROSS-MODULE: The unsafety does NOT propagate to consumers.
+///
+/// # Safety Invariants
+///
+/// This struct maintains the following invariants that make the public API safe:
+/// - `ptr` always points to valid memory of size `len * sizeof(i32)`
+/// - `len` is immutable and accurately reflects the allocation size
+/// - Memory is zero-initialized at construction (safe to read)
+/// - Memory is freed exactly once in Drop
 pub struct SafeBuffer {
     ptr: *mut i32,
     len: usize,
@@ -123,10 +131,16 @@ pub struct SafeBuffer {
 
 impl SafeBuffer {
     /// Creates a new buffer - NO unsafe required by caller
+    ///
+    /// # Safety Discharge
+    ///
+    /// - `mid_level_alloc_zeroed` requires count > 0: ensured by assert
+    /// - Memory must be freed: handled by Drop impl
+    /// - No use after free: Drop only called once, Rust ownership prevents aliasing
     pub fn new(len: usize) -> Self {
         assert!(len > 0, "Buffer length must be positive");
 
-        // Internal cross-function call - we suppress unsafety here
+        // SAFETY DISCHARGE: count > 0 validated above, memory zero-initialized
         let ptr = mid_level_alloc_zeroed(len);
 
         SafeBuffer { ptr, len }
@@ -141,22 +155,76 @@ impl SafeBuffer {
     }
 
     /// Safe read with bounds checking
+    ///
+    /// # Safety Discharge
+    ///
+    /// - Pointer valid: struct invariant, maintained by construction and Drop
+    /// - Bounds: explicit check `index < self.len` before access
     pub fn get(&self, index: usize) -> Option<i32> {
         if index >= self.len {
             return None;
         }
-        // Unsafety contained - bounds check done above
+        // SAFETY DISCHARGE: bounds checked above, ptr valid by invariant
         Some(unsafe { unsafe_read(self.ptr, index) })
     }
 
     /// Safe write with bounds checking
+    ///
+    /// # Safety Discharge
+    ///
+    /// - Pointer valid: struct invariant
+    /// - Bounds: explicit check before access
+    /// - No aliasing: &mut self ensures exclusive access
     pub fn set(&mut self, index: usize, value: i32) -> Result<(), &'static str> {
         if index >= self.len {
             return Err("Index out of bounds");
         }
-        // Unsafety contained - bounds check done above
+        // SAFETY DISCHARGE: bounds checked above, ptr valid, exclusive access via &mut self
         unsafe { unsafe_write(self.ptr, index, value) };
         Ok(())
+    }
+
+    /// Returns a safe slice view of the entire buffer.
+    ///
+    /// THE COMPELLING CASE: Returns a slice that provides safe, bounds-checked
+    /// access to the underlying memory without copying.
+    ///
+    /// # Safety Discharge
+    ///
+    /// - Pointer valid: struct invariant
+    /// - Length accurate: self.len matches allocation
+    /// - Lifetime: returned slice borrows &self, cannot outlive buffer
+    /// - Aliasing: &self ensures no concurrent mutation
+    pub fn as_slice(&self) -> &[i32] {
+        // SAFETY DISCHARGE: ptr valid for len elements, lifetime tied to &self
+        unsafe { std::slice::from_raw_parts(self.ptr, self.len) }
+    }
+
+    /// Returns a mutable slice view of the entire buffer.
+    ///
+    /// # Safety Discharge
+    ///
+    /// - Pointer valid: struct invariant
+    /// - Length accurate: self.len matches allocation
+    /// - Lifetime: returned slice borrows &mut self, cannot outlive buffer
+    /// - Exclusive access: &mut self ensures no aliasing
+    pub fn as_mut_slice(&mut self) -> &mut [i32] {
+        // SAFETY DISCHARGE: ptr valid, exclusive access via &mut self
+        unsafe { std::slice::from_raw_parts_mut(self.ptr, self.len) }
+    }
+
+    /// Returns a slice over a range with bounds checking.
+    ///
+    /// # Safety Discharge
+    ///
+    /// - Returns None for invalid ranges (no panic, no UB)
+    /// - Valid ranges produce valid slices (subset of valid allocation)
+    pub fn get_slice(&self, start: usize, len: usize) -> Option<&[i32]> {
+        if start.saturating_add(len) > self.len {
+            return None;
+        }
+        // SAFETY DISCHARGE: bounds validated above
+        Some(unsafe { std::slice::from_raw_parts(self.ptr.add(start), len) })
     }
 }
 
