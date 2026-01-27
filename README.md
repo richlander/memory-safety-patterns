@@ -1,6 +1,7 @@
 # Memory Safety Examples
 
 This repository demonstrates memory safety patterns across three languages:
+
 - **C#** - Current model and future directions
 - **Rust** - The gold standard for memory safety
 - **Swift** - Swift 6.2+ with strict memory safety
@@ -9,8 +10,8 @@ This repository demonstrates memory safety patterns across three languages:
 
 ```
 ├── csharp/                 # Current C# model (pointer-type propagation)
-├── csharpnext/             # Future C# (unsafe keyword on members)
-├── csharpnext-attribute/   # Alternative C# future ([RequiresUnsafe] attribute)
+├── csharpnext-keyword/     # Future C# (unsafe keyword on members)
+├── csharpnext-attribute/   # Future C# alternative ([RequiresUnsafe] attribute)
 ├── rust/                   # Rust memory safety patterns
 └── swift/                  # Swift 6.2 memory safety patterns
 ```
@@ -109,9 +110,10 @@ cd swift && swift run
 
 ## Future Directions (C#)
 
-Two models are being considered for .NET 11+:
+Two models are being considered for .NET 11+. The keyword model is likely to ship
+first in preview releases, with the attribute model considered afterwards.
 
-### 1. Keyword Model (`csharpnext/`)
+### 1. Keyword Model (`csharpnext-keyword/`)
 The `unsafe` keyword on methods propagates to callers:
 ```csharp
 unsafe void DangerousMethod() { }  // Callers need unsafe context

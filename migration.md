@@ -298,12 +298,40 @@ dotnet memory-safety fix MyProject.csproj --strategy=propagate
 3. Tools can automate much of this
 4. Results in minimal unsafe surface area
 
+### Who Needs to React?
+
+The migration burden falls primarily on **library developers**, not application developers:
+
+1. **Library developers** will need to:
+   - Audit their APIs for unsafe operations
+   - Decide whether to propagate (`[RequiresUnsafe]`) or suppress (safe wrapper)
+   - Most will be biased toward **exposing safe APIs** when reasonably possible
+   - This is the desired outcome: unsafe code concentrated in well-audited libraries
+
+2. **Application developers** will largely benefit without action:
+   - Libraries they consume will expose safe APIs
+   - Compiler will warn/error if they accidentally use unsafe APIs
+   - Only need to react if they have direct unsafe code (uncommon)
+
+This mirrors the Rust ecosystem where most application code never touches `unsafe`,
+relying instead on safe abstractions provided by libraries.
+
+### Rollout Strategy
+
+The most likely rollout sequence:
+
+1. **Preview releases**: Keyword model (`unsafe` on members) ships first
+2. **Feedback period**: Gather real-world migration experience
+3. **Attribute consideration**: `[RequiresUnsafe]` evaluated for semantic unsafety cases
+4. **BCL annotation**: Standard library APIs annotated (required for ecosystem benefit)
+
 ### Migration Effort: Medium (with tooling)
 
 - Roslyn analyzers can identify 90%+ of issues automatically
 - Code fixers can apply mechanical fixes
 - Semantic decisions still require human judgment
 - BCL must ship with annotations for ecosystem to benefit
+- **Library authors bear most of the burden; app developers mostly benefit**
 
 ---
 
