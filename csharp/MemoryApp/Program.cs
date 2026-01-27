@@ -19,7 +19,19 @@ class Program
         DemonstrateCrossModulePropagation();
         DemonstrateCrossModuleSuppression();
         DemonstratePropagationChain();
+        DemonstrateUnsafeAsApi();
         PrintSummary();
+    }
+
+    /// <summary>
+    /// Demonstrates that Unsafe.As methods don't require unsafe blocks.
+    /// Shows that "unsafe" in C# is about syntax (pointers), not type names.
+    /// </summary>
+    static void DemonstrateUnsafeAsApi()
+    {
+        Console.WriteLine("\n");
+        UnsafeAsExample.RunAllDemonstrations();
+        Console.WriteLine();
     }
 
     /// <summary>
