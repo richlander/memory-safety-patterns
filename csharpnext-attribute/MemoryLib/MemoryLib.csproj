@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- Required for pointer operations -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <!--
+    ATTRIBUTE-BASED MODEL (Alternative Design)
+
+    In this model:
+    - The `unsafe` keyword keeps its CURRENT meaning (pointer types only)
+    - [RequiresUnsafe] attribute is used to mark dangerous methods
+    - Compiler warns/errors when calling [RequiresUnsafe] methods
+      without acknowledgment
+
+    Callers acknowledge by either:
+    1. Using an `unsafe` block (existing syntax)
+    2. Marking their method with [RequiresUnsafe] (propagation)
+    3. Using [SuppressUnsafe] to explicitly accept responsibility
+
+    Advantages over changing `unsafe` keyword meaning:
+    - More backward compatible
+    - Clearer separation: pointers vs semantic unsafety
+    - Existing unsafe code doesn't change behavior
+    -->
+    <MemorySafetyRules>preview</MemorySafetyRules>
+  </PropertyGroup>
+
+</Project>

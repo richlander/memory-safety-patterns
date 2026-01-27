@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!--
+    ATTRIBUTE-BASED MODEL
+
+    With this model, the `unsafe` keyword means what it always has:
+    "I'm using pointer types."
+
+    The [RequiresUnsafe] attribute adds a NEW meaning:
+    "This method is semantically unsafe and callers must acknowledge."
+
+    When calling a [RequiresUnsafe] method, callers must:
+    - Be in an unsafe block, OR
+    - Have [RequiresUnsafe] on their method (propagate), OR
+    - Use [SuppressUnsafe] (explicit suppression)
+    -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <MemorySafetyRules>preview</MemorySafetyRules>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MemoryLib\MemoryLib.csproj" />
+  </ItemGroup>
+
+</Project>
