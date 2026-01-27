@@ -1,0 +1,3 @@
+[workspace]
+members = ["memory_lib", "memory_app"]
+resolver = "2"

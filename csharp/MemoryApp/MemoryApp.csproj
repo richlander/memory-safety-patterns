@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!--
+    NOTE: We must enable AllowUnsafeBlocks here because we call
+    methods that use pointer types in their signatures.
+
+    In C#, even CALLING a method with pointer parameters requires
+    an unsafe context. This is how unsafety "propagates" in C#.
+
+    However, using SafeBuffer requires NO unsafe context because
+    it contains all unsafety internally.
+    -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MemoryLib\MemoryLib.csproj" />
+  </ItemGroup>
+
+</Project>
