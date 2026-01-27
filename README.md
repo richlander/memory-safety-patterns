@@ -82,11 +82,13 @@ public static unsafe int* Alloc(int count)
 - [dotnet/runtime #41418](https://github.com/dotnet/runtime/issues/41418) - Tracking issue for APIs that should require unsafe
 
 ### Swift Memory Safety
+- [SE-0458 Strict Memory Safety](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0458-strict-memory-safety.md) - Swift Evolution proposal
 - [Swift 6.2 Release Notes](https://www.swift.org/blog/swift-6.2-released/) - Span and strict memory safety
 - [Strict Memory Safety Diagnostics](https://docs.swift.org/compiler/documentation/diagnostics/strict-memory-safety)
 
 ### Rust Memory Safety
 - [Unsafe Rust](https://doc.rust-lang.org/book/ch19-01-unsafe-rust.html) - The Rust Programming Language
+- [rust-lang/rust #55607](https://github.com/rust-lang/rust/issues/55607) - Tracking issue for RFC 2585 (unsafe_block_in_unsafe_fn)
 
 ## Building and Running
 
