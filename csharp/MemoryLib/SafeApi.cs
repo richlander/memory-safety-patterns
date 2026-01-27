@@ -222,6 +222,8 @@ public sealed class SafeBuffer : IDisposable
             throw new ObjectDisposedException(nameof(SafeBuffer));
     }
 
+    ~SafeBuffer() => Dispose();
+
     public void Dispose()
     {
         if (!_disposed)

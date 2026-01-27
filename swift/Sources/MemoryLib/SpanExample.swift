@@ -149,9 +149,11 @@ public struct SpanExample {
         let data = [10, 20, 30, 40, 50]
 
         // UNSAFE: Direct pointer manipulation
-        unsafe data.withUnsafeBufferPointer { buffer in
+        // Note: withUnsafeBufferPointer itself is safe - it's the pointer
+        // dereference (ptr.pointee) that requires unsafe acknowledgment
+        data.withUnsafeBufferPointer { buffer in
             let ptr = buffer.baseAddress!
-            print("Pointer access: \(ptr.pointee)")
+            print("Pointer access: \(unsafe ptr.pointee)")
             // ptr.advanced(by: 100).pointee would be UB!
         }
 

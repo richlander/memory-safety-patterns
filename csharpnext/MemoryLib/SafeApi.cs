@@ -237,6 +237,8 @@ public sealed class SafeBuffer : IDisposable
             throw new ObjectDisposedException(nameof(SafeBuffer));
     }
 
+    ~SafeBuffer() => Dispose();
+
     /// <summary>
     /// Releases the unmanaged memory.
     /// </summary>

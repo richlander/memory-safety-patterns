@@ -26,6 +26,9 @@ func rawAlloc(count: Int) -> UnsafeMutablePointer<Int> {
 /// Low-level deallocation.
 @unsafe
 func rawDealloc(_ ptr: UnsafeMutablePointer<Int>, count: Int) {
+    // Note: deinitialize is a no-op for trivial types like Int, but included
+    // here for completeness - non-trivial types require deinitialization
+    // before deallocation to run destructors.
     ptr.deinitialize(count: count)
     ptr.deallocate()
 }

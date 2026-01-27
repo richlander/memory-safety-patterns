@@ -150,6 +150,7 @@ impl SafeBuffer {
         self.len
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
@@ -235,7 +236,16 @@ impl Drop for SafeBuffer {
     }
 }
 
+// SAFETY: SafeBuffer can be sent to another thread because:
+// - `ptr` is exclusively owned (no aliasing possible due to Rust ownership)
+// - No thread-local state is used
+// - The raw pointer is only accessed through &self or &mut self methods
 unsafe impl Send for SafeBuffer {}
+
+// SAFETY: SafeBuffer can be shared across threads because:
+// - All read access is through &self (shared reference)
+// - Mutation requires &mut self (exclusive reference)
+// - Rust's borrow checker prevents data races at compile time
 unsafe impl Sync for SafeBuffer {}
 
 // ============================================================================
