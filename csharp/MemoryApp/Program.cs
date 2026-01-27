@@ -20,6 +20,7 @@ class Program
         DemonstrateCrossModuleSuppression();
         DemonstratePropagationChain();
         DemonstrateUnsafeAsApi();
+        DemonstrateSpan();
         PrintSummary();
     }
 
@@ -31,6 +32,16 @@ class Program
     {
         Console.WriteLine("\n");
         UnsafeAsExample.RunAllDemonstrations();
+        Console.WriteLine();
+    }
+
+    /// <summary>
+    /// Demonstrates Span&lt;T&gt; as a safe abstraction for contiguous memory.
+    /// </summary>
+    static void DemonstrateSpan()
+    {
+        Console.WriteLine("\n");
+        SpanExample.RunAllDemonstrations();
         Console.WriteLine();
     }
 

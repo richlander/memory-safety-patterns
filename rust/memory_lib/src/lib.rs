@@ -9,6 +9,8 @@
 
 use std::alloc::{alloc, dealloc, Layout};
 
+pub mod span_example;
+
 // ============================================================================
 // CROSS-FUNCTION PROPAGATION (within this module)
 // ============================================================================

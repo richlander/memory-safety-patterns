@@ -16,7 +16,15 @@ demonstrateCrossModulePropagation()
 demonstrateCrossModuleSuppression()
 demonstratePropagationChain()
 demonstrateSneakyApi()
+demonstrateSpan()
 printSummary()
+
+/// Demonstrates Span as a safe abstraction for contiguous memory.
+func demonstrateSpan() {
+    print("\n")
+    SpanExample.runAllDemonstrations()
+    print()
+}
 
 /// Demonstrates CROSS-MODULE PROPAGATION.
 /// @unsafe functions from library require `unsafe` to call (with StrictMemorySafety).

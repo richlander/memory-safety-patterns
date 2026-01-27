@@ -10,6 +10,7 @@ use memory_lib::{
     unsafe_alloc, unsafe_free, unsafe_read, unsafe_write,
     SafeBuffer,
     propagation_chain,
+    span_example,
 };
 
 fn main() {
@@ -18,7 +19,15 @@ fn main() {
     demonstrate_cross_module_propagation();
     demonstrate_cross_module_suppression();
     demonstrate_propagation_chain();
+    demonstrate_slices();
     print_summary();
+}
+
+/// Demonstrates Rust slices as safe memory views.
+fn demonstrate_slices() {
+    println!("\n");
+    span_example::run_all_demonstrations();
+    println!();
 }
 
 /// Demonstrates CROSS-MODULE PROPAGATION
