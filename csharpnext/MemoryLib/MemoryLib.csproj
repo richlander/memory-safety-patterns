@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- Required to enable unsafe code blocks in C# -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <!--
+    .NET 11+ Memory Safety Rules (Future)
+
+    When enabled, the `unsafe` keyword on members requires callers to use
+    an unsafe context. This extends beyond just pointer types to cover
+    all memory-unsafe operations like Unsafe.As, Marshal, etc.
+
+    Values:
+    - preview: Enable preview memory safety rules (.NET 11)
+    - 2: Full memory safety rules (.NET 12+)
+
+    See: https://github.com/dotnet/designs/blob/main/accepted/2025/memory-safety/
+    -->
+    <MemorySafetyRules>preview</MemorySafetyRules>
+  </PropertyGroup>
+
+</Project>
