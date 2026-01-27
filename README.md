@@ -75,8 +75,10 @@ public static unsafe int* Alloc(int count)
 ## Related Resources
 
 ### C# Memory Safety Evolution
+- [Memory Safety Design PR](https://github.com/dotnet/designs/pull/362) - The design proposal PR
 - [Memory Safety in .NET](https://github.com/dotnet/designs/blob/main/accepted/2025/memory-safety/memory-safety.md) - Overview design document
 - [Caller Unsafe Proposal](https://github.com/dotnet/designs/blob/main/accepted/2025/memory-safety/caller-unsafe.md) - `unsafe` member annotations
+- [SDK Memory Safety Enforcement](https://github.com/dotnet/designs/blob/main/accepted/2025/memory-safety/sdk-memory-safety-enforcement.md) - SDK-level enforcement
 - [dotnet/runtime #41418](https://github.com/dotnet/runtime/issues/41418) - Tracking issue for APIs that should require unsafe
 
 ### Swift Memory Safety
