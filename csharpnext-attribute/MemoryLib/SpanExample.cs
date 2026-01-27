@@ -198,6 +198,49 @@ public static class SpanExample
         Console.WriteLine();
     }
 
+    /// <summary>
+    /// THE COMPELLING CASE: Methods that RETURN Spans.
+    ///
+    /// Returning a Span allows callers to get a safe, bounds-checked view
+    /// into internal state without copying. This is the most powerful
+    /// use of Span&lt;T&gt;.
+    ///
+    /// In the ATTRIBUTE MODEL, this is clean:
+    /// - No `unsafe` keyword (no pointers)
+    /// - No [RequiresUnsafe] (semantically safe)
+    /// - Just safe, high-performance zero-copy access
+    /// </summary>
+    public static void DemonstrateReturningSpans()
+    {
+        Console.WriteLine("--- Returning Spans (The Compelling Case) ---");
+
+        var container = new DataContainer([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+
+        // Get safe views into the container's internal data
+        // Zero-copy, bounds-checked
+        Span<int> firstHalf = container.GetFirstHalf();
+        Span<int> lastHalf = container.GetLastHalf();
+
+        Console.WriteLine($"First half: [{string.Join(", ", firstHalf.ToArray())}]");
+        Console.WriteLine($"Last half: [{string.Join(", ", lastHalf.ToArray())}]");
+
+        // Modify through the span - changes internal state safely
+        firstHalf[0] = 100;
+        Console.WriteLine($"After firstHalf[0] = 100, container[0] = {container[0]}");
+
+        // Subslicing with bounds checking
+        Span<int> range = container.GetRange(2, 4);
+        Console.WriteLine($"Range [2..6]: [{string.Join(", ", range.ToArray())}]");
+
+        // TryGetRange for safe access without exceptions
+        if (container.TryGetRange(100, 5, out _) == false)
+        {
+            Console.WriteLine("TryGetRange(100, 5) = false (safe bounds check)");
+        }
+
+        Console.WriteLine();
+    }
+
     // Helper functions - all safe, no annotations
 
     private static int Sum(ReadOnlySpan<int> span)
@@ -238,6 +281,7 @@ public static class SpanExample
         DemonstrateSlicing();
         DemonstrateFunctionParameters();
         DemonstrateReadOnlySpan();
+        DemonstrateReturningSpans();
         DemonstrateThreeLevels();
 
         Console.WriteLine("--- Summary ---");
@@ -246,5 +290,124 @@ public static class SpanExample
         Console.WriteLine("- Pointer code: `unsafe` keyword");
         Console.WriteLine("- Semantic unsafety: [RequiresUnsafe]");
         Console.WriteLine("- Span<T> is in the first category - fully safe!");
+        Console.WriteLine("- Can RETURN Spans from methods - the compelling case!");
+    }
+}
+
+/// <summary>
+/// Example class that RETURNS Spans into its internal data.
+///
+/// This demonstrates the compelling use case: exposing internal state
+/// safely without copying.
+///
+/// ATTRIBUTE MODEL: This class is FULLY SAFE:
+/// - No `unsafe` keyword (no pointers)
+/// - No [RequiresUnsafe] (no semantic unsafety)
+/// - Just safe Span operations
+/// </summary>
+public class DataContainer
+{
+    private readonly int[] _data;
+
+    public DataContainer(int[] data)
+    {
+        _data = data ?? throw new ArgumentNullException(nameof(data));
+    }
+
+    public int Length => _data.Length;
+
+    public int this[int index] => _data[index];
+
+    /// <summary>
+    /// Returns a Span over the entire internal array.
+    ///
+    /// THE COMPELLING CASE: Zero-copy access to internal state.
+    /// </summary>
+    /// <remarks>
+    /// SAFETY DISCHARGE: This is safe because:
+    /// - _data is readonly and cannot be replaced after construction
+    /// - Array.AsSpan() is bounds-safe by construction
+    /// - Span's ref struct nature prevents it from outliving this container
+    ///   (in typical usage - caller must not store beyond container lifetime)
+    ///
+    /// No `unsafe`, no [RequiresUnsafe] - fully safe API.
+    ///
+    /// CALLER OBLIGATION: Do not use the returned Span after the container
+    /// is no longer referenced (Span cannot enforce this at compile time).
+    /// </remarks>
+    public Span<int> AsSpan() => _data.AsSpan();
+
+    /// <summary>
+    /// Returns a ReadOnlySpan over the entire internal array.
+    /// </summary>
+    /// <remarks>
+    /// SAFETY DISCHARGE: Same as AsSpan(), with additional immutability guarantee.
+    /// </remarks>
+    public ReadOnlySpan<int> AsReadOnlySpan() => _data.AsSpan();
+
+    /// <summary>
+    /// Returns a Span over the first half of the data.
+    /// </summary>
+    /// <remarks>
+    /// SAFETY DISCHARGE:
+    /// - Bounds computed from _data.Length, always valid
+    /// - AsSpan with explicit length ensures no over-read
+    /// </remarks>
+    public Span<int> GetFirstHalf()
+    {
+        int mid = _data.Length / 2;
+        return _data.AsSpan(0, mid);
+    }
+
+    /// <summary>
+    /// Returns a Span over the last half of the data.
+    /// </summary>
+    /// <remarks>
+    /// SAFETY DISCHARGE: Same as GetFirstHalf.
+    /// </remarks>
+    public Span<int> GetLastHalf()
+    {
+        int mid = _data.Length / 2;
+        return _data.AsSpan(mid);
+    }
+
+    /// <summary>
+    /// Returns a Span over a specified range.
+    /// </summary>
+    /// <remarks>
+    /// SAFETY DISCHARGE:
+    /// - Bounds explicitly validated before Span construction
+    /// - Throws on invalid input (fail-fast)
+    /// </remarks>
+    public Span<int> GetRange(int start, int length)
+    {
+        if (start < 0)
+            throw new ArgumentOutOfRangeException(nameof(start), "Start cannot be negative");
+        if (length < 0)
+            throw new ArgumentOutOfRangeException(nameof(length), "Length cannot be negative");
+        if (start + length > _data.Length)
+            throw new ArgumentOutOfRangeException(nameof(length), $"Range [{start}..{start + length}) exceeds data length {_data.Length}");
+
+        return _data.AsSpan(start, length);
+    }
+
+    /// <summary>
+    /// Tries to get a Span over a specified range without throwing.
+    /// </summary>
+    /// <remarks>
+    /// SAFETY DISCHARGE:
+    /// - Returns false for invalid ranges (no exception, no UB)
+    /// - Valid ranges produce valid spans
+    /// </remarks>
+    public bool TryGetRange(int start, int length, out Span<int> span)
+    {
+        if (start < 0 || length < 0 || start + length > _data.Length)
+        {
+            span = default;
+            return false;
+        }
+
+        span = _data.AsSpan(start, length);
+        return true;
     }
 }

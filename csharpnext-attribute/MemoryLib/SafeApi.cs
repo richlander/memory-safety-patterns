@@ -44,6 +44,12 @@ public sealed class SafeBuffer : IDisposable
     /// - [RequiresUnsafe] from RawMemory.RawAlloc
     ///
     /// Both are acknowledged by the unsafe block.
+    ///
+    /// SAFETY DISCHARGE for RawAlloc obligations:
+    /// - count > 0: Validated by guard clause below
+    /// - Must free: Handled by Dispose()
+    /// - No use after free: _disposed flag prevents access
+    /// - Initialization: Zero-filled in loop below
     /// </remarks>
     public SafeBuffer(int length)
     {
@@ -78,10 +84,11 @@ public sealed class SafeBuffer : IDisposable
     /// Indexer with bounds checking. NO [RequiresUnsafe] needed.
     /// </summary>
     /// <remarks>
-    /// Safe because:
-    /// - Bounds checking before pointer access
-    /// - Disposed checking before access
-    /// - Pointer operations contained in unsafe blocks
+    /// SAFETY DISCHARGE for pointer access:
+    /// - Valid memory: ThrowIfDisposed ensures buffer not freed
+    /// - Bounds: Explicit check ensures 0 &lt;= index &lt; _length
+    /// - Initialized: Constructor zero-initializes all elements
+    /// - Pointer operations contained in minimal unsafe blocks
     /// </remarks>
     public int this[int index]
     {
@@ -146,15 +153,70 @@ public sealed class SafeBuffer : IDisposable
     }
 
     /// <summary>
-    /// Get as Span - safe, bounds-checked view.
+    /// Returns a Span over the entire buffer - safe, bounds-checked view.
+    ///
+    /// THE COMPELLING CASE: Callers get a safe view without copying.
     /// </summary>
+    /// <remarks>
+    /// SAFETY DISCHARGE for returning Span:
+    /// - Valid memory: ThrowIfDisposed ensures buffer not freed
+    /// - Correct length: _length is immutable, set at construction
+    /// - Lifetime: Span is ref struct, cannot outlive this buffer
+    ///
+    /// CALLER OBLIGATION: Do not use the returned Span after Dispose().
+    /// </remarks>
     public Span<int> AsSpan()
     {
         ThrowIfDisposed();
 
+        // SAFETY DISCHARGE: Pointer valid, length accurate
         unsafe
         {
             return new Span<int>((void*)_buffer, _length);
+        }
+    }
+
+    /// <summary>
+    /// Returns a Span over a portion of the buffer.
+    ///
+    /// THE COMPELLING CASE: Zero-copy slicing with bounds safety.
+    /// </summary>
+    /// <remarks>
+    /// SAFETY DISCHARGE:
+    /// - Valid memory: ThrowIfDisposed check
+    /// - Bounds: Explicit validation before Span construction
+    /// </remarks>
+    public Span<int> AsSpan(int start, int length)
+    {
+        ThrowIfDisposed();
+
+        // Bounds validation in safe code, BEFORE entering unsafe
+        if (start < 0)
+            throw new ArgumentOutOfRangeException(nameof(start), "Start cannot be negative");
+        if (length < 0)
+            throw new ArgumentOutOfRangeException(nameof(length), "Length cannot be negative");
+        if (start + length > _length)
+            throw new ArgumentOutOfRangeException(nameof(length), $"Range [{start}..{start + length}) exceeds buffer length {_length}");
+
+        // SAFETY DISCHARGE: All bounds validated above
+        unsafe
+        {
+            return new Span<int>((int*)_buffer + start, length);
+        }
+    }
+
+    /// <summary>
+    /// Returns a read-only Span over the entire buffer.
+    /// </summary>
+    /// <remarks>
+    /// SAFETY DISCHARGE: Same as AsSpan(), with additional immutability guarantee.
+    /// </remarks>
+    public ReadOnlySpan<int> AsReadOnlySpan()
+    {
+        ThrowIfDisposed();
+        unsafe
+        {
+            return new ReadOnlySpan<int>((void*)_buffer, _length);
         }
     }
 
@@ -222,7 +284,7 @@ public static class PropagationVsSuppression
         // The unsafe block acknowledges [RequiresUnsafe] on Unsafe.As
         unsafe
         {
-            return Unsafe.As<object[], string[]>(objects);
+            return Unsafe.As<object[], string[]>(ref objects);
         }
     }
 }

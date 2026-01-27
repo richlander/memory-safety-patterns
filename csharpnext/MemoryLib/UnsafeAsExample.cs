@@ -23,6 +23,7 @@
 // See: https://github.com/dotnet/designs/blob/main/accepted/2025/memory-safety/
 
 using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace MemoryLib;
@@ -66,7 +67,7 @@ public static class UnsafeAsExample
         unsafe
         {
             // Safety: string[] is covariant with object[], this is valid
-            objects = Unsafe.As<string[], object[]>(strings);
+            objects = Unsafe.As<string[], object[]>(ref strings);
         }
 
         Console.WriteLine($"Reinterpreted string[] as object[]");

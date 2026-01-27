@@ -262,7 +262,7 @@ public static class SemanticUnsafetyExamples
         // No pointer types, but semantically unsafe
         unsafe
         {
-            return Unsafe.As<TFrom[], TTo[]>(array);
+            return Unsafe.As<TFrom[], TTo[]>(ref array);
         }
     }
 }

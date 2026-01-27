@@ -9,6 +9,7 @@
 // that are semantically unsafe WITHOUT requiring pointers.
 
 using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace MemoryLib;
@@ -42,7 +43,7 @@ public static class UnsafeAsExample
         object[] objects;
         unsafe
         {
-            objects = Unsafe.As<string[], object[]>(strings);
+            objects = Unsafe.As<string[], object[]>(ref strings);
         }
 
         Console.WriteLine($"Reinterpreted string[] as object[]");
