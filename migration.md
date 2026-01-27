@@ -316,6 +316,56 @@ The migration burden falls primarily on **library developers**, not application 
 This mirrors the Rust ecosystem where most application code never touches `unsafe`,
 relying instead on safe abstractions provided by libraries.
 
+### The Keyword vs Attribute Tension
+
+A key difference between the two models is how they handle existing code:
+
+**Keyword model (stronger)**
+
+The `unsafe` keyword on a method signature becomes the propagation choice:
+- `unsafe void Foo() { ... }` → propagates to callers
+- `void Foo() { unsafe { ... } }` → suppresses (blocks inside, not on signature)
+
+This **forces a decision** on every existing `unsafe` method signature:
+1. Keep `unsafe` on signature → now propagates (breaking change to callers)
+2. Remove `unsafe` from signature, keep internal blocks → suppresses (asserting safety)
+
+No existing `unsafe` method passes through unexamined. The migration is more disruptive
+but leaves no ambiguity.
+
+**Attribute model (gentler)**
+
+Existing `unsafe` keyword meaning unchanged. Propagation is opt-in via `[RequiresUnsafe]`.
+Suppression remains implicit—existing code continues to compile without changes.
+
+This is easier to migrate but weaker: you can ignore the new attributes entirely.
+
+**The explicit choice problem**
+
+Neither model perfectly solves the "how does the compiler know it's been analyzed?" question.
+The keyword model forces review of `unsafe` signatures, but methods with only internal
+`unsafe` blocks (the suppression case) still pass through silently.
+
+The surefire approach would be an attribute that requires an explicit boolean choice:
+
+```csharp
+// Explicit propagation
+[Unsafe(propagates: true, Reason = "Caller must ensure pointer validity")]
+public void DangerousMethod() { ... }
+
+// Explicit suppression - author asserts obligations are discharged
+[Unsafe(propagates: false, Reason = "Bounds checked, memory owned by this class")]
+public void SafeWrapper() { unsafe { ... } }
+
+// No attribute on method with unsafe blocks → compiler warning
+// "Method contains unsafe code but lacks [Unsafe] annotation.
+//  Specify whether this propagates or suppresses unsafety."
+```
+
+This forces every method touching unsafe code to make an explicit, documented choice.
+Whether such an attribute is adopted remains an open question—it's more verbose but
+eliminates ambiguity about author intent.
+
 ### Rollout Strategy
 
 The most likely rollout sequence:
