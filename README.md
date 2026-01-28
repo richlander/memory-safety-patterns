@@ -28,13 +28,23 @@ Evaluating each language against the [north star](north-star.md) characteristics
 | **Strong propagation** | ❌ Pointer types only | ✅ Member annotations | ✅ `unsafe fn` | ✅ `@unsafe` |
 | **Strong auditing** | ⚠️ AllowUnsafeBlocks | 🔮 TBD | ✅ Crate metadata | ⚠️ Per-module |
 
-**Key gaps in C# (current)**: `Unsafe.As`, `Marshal.*`, and similar APIs are semantically unsafe but don't require `unsafe` blocks. The compiler can't track this unsafety.
+**Rust:** Considered the gold standard by which other languages are evaluated.
 
-**C# (future) opportunity**: The `// TODO (MSv2)` pattern in `csharpnext-*` shows how migration tooling could mark "memory safety oblivious" code for explicit audit decisions.
+**Key gaps in Swift:** Warnings-only enforcement can result in a false sense of security if warnings are missed or disabled.
+
+**Key gaps in C#**: `Unsafe.As`, `Marshal.*`, and similar APIs are semantically unsafe but don't require `unsafe` blocks. The compiler can't track this unsafety. This is in part because the APIs are not marked correctly and because the definition of `unsafe` is too narrow, more focused on pointer operations as opposed to possibility of memory corruption.
+
+**Planned improvements with C# vNext:** The definition of unsafe expands to match Rust and all platform APIs are marked correctly. A combination of migration tools and the compiler transition a codebase to a consistent "get right stay right" state. The compiler treats memory safety issues at the bottom of a call-chain as errors, which provides confidence at the top of the call-chain.
+
+**Potential gaps in C# vNext:** Reflection is likely to be unaddressed. The lack of a lifetime/ownership model means that compiler is unable to detect use-after-free issues with ArrayPool. Ownership may be addressed after vNext `unsafe` is delivered.
+
+### Tools examples
 
 **Rust auditing**: See [`rust/workflows/audit-unsafe.sh`](rust/workflows/audit-unsafe.sh) for examples of `cargo-geiger`, `cargo-audit`, and crate-level `#![forbid(unsafe_code)]` policies.
 
-**Swift 6.2 gaps**: See [`swift/workflows/audit-unsafe.sh`](swift/workflows/audit-unsafe.sh) for details on per-module opt-in, warnings-only enforcement, and lack of dependency tree auditing.
+**Swift auditing**: See [`swift/workflows/audit-unsafe.sh`](swift/workflows/audit-unsafe.sh) for details on per-module opt-in, warnings-only enforcement, and lack of dependency tree auditing.
+
+**C# (future) opportunity**: The `// TODO (MSv2)` pattern in `csharpnext-*` shows how migration tooling could mark "memory safety oblivious" code for explicit audit decisions.
 
 ### Concepts Demonstrated
 
