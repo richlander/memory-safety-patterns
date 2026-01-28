@@ -28,15 +28,15 @@ Evaluating each language against the [north star](north-star.md) characteristics
 | **Strong propagation** | ❌ Pointer types only | ✅ Member annotations | ✅ `unsafe fn` | ✅ `@unsafe` |
 | **Strong auditing** | ⚠️ AllowUnsafeBlocks | 🔮 TBD | ✅ Crate metadata | ⚠️ Per-module |
 
-**Rust:** Considered the gold standard by which other languages are evaluated.
+**Rust:** The `unsafe` keyword has a clear, comprehensive definition covering all memory-unsafe operations. The borrow checker enforces ownership and lifetimes at compile time, eliminating use-after-free and data races. Crate-level metadata makes auditing straightforward. Tools like [cargo-geiger](https://github.com/geiger-rs/cargo-geiger) quantify unsafe usage across the entire dependency tree.
 
-**Key gaps in Swift:** Warnings-only enforcement can result in a false sense of security if warnings are missed or disabled.
+**Key gaps in Swift 6.2:** Warnings-only enforcement can result in a false sense of security if warnings are missed or disabled. More significantly, there is no migration tooling to capture state transitions. When enabling strict memory safety mode, developers add `unsafe` keywords to silence warnings, but there's no distinction between "never audited" and "intentionally suppressed after review." Major Apple frameworks like Combine are [unlikely to receive `@unsafe` annotations](https://forums.swift.org/t/se-0458-opt-in-strict-memory-safety-checking/77274), meaning consumers get no warnings when calling unsafe APIs from those libraries. Additionally, precompiled frameworks (how Apple ships Foundation, UIKit, etc.) lose all warning information—you can't audit what you don't compile.
 
-**Key gaps in C#**: `Unsafe.As`, `Marshal.*`, and similar APIs are semantically unsafe but don't require `unsafe` blocks. The compiler can't track this unsafety. This is in part because the APIs are not marked correctly and because the definition of `unsafe` is too narrow, more focused on pointer operations as opposed to possibility of memory corruption.
+**Key gaps in C# (current):** `Unsafe.As`, `Marshal.*`, and similar APIs are semantically unsafe but don't require `unsafe` blocks. The compiler can't track this unsafety. This is in part because the APIs are not marked correctly and because the definition of `unsafe` is too narrow, focused on pointer operations as opposed to possibility of memory corruption.
 
-**Planned improvements with C# vNext:** The definition of unsafe expands to match Rust and all platform APIs are marked correctly. A combination of migration tools and the compiler transition a codebase to a consistent "get right stay right" state. The compiler treats memory safety issues at the bottom of a call-chain as errors, which provides confidence at the top of the call-chain.
+**Planned improvements with C# vNext:** The definition of unsafe expands to match Rust and all platform APIs are marked correctly—similar to how nullable annotations were applied pervasively across .NET. Migration tooling ensures lossless state transitions: code that was "memory safety oblivious" (compiled without unsafe acknowledgment) is explicitly marked for audit, preserving intent across commits. See [csharp-migration.md](csharp-migration.md) for details.
 
-**Potential gaps in C# vNext:** Reflection is likely to be unaddressed. The lack of a lifetime/ownership model means that compiler is unable to detect use-after-free issues with ArrayPool. Ownership may be addressed after vNext `unsafe` is delivered.
+**Potential gaps in C# vNext:** Reflection is likely to be unaddressed. The lack of a lifetime/ownership model means the compiler is unable to detect use-after-free issues with ArrayPool. Ownership may be addressed after vNext `unsafe` is delivered.
 
 ### Tools examples
 
