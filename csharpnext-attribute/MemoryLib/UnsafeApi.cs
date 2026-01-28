@@ -147,6 +147,60 @@ public static class UnsafeApi
 }
 
 /// <summary>
+/// MIGRATED from csharp: Methods that were "implicitly unsafe" in the old model.
+///
+/// These methods called [RequiresUnsafe] APIs (like Unsafe.As) without any
+/// unsafe acknowledgment. The migration tool marked them for audit.
+///
+/// NORTH STAR - "Strong migration moment":
+/// "A method with unsafe blocks with no unsafe method signature is seen as
+/// the suppression case in the new C# model, however, no one made that decision.
+/// It's the most dangerous kind of implicit."
+/// </summary>
+public static class ImplicitlyUnsafeApi
+{
+    // TODO (MSv2): This is "memory safety oblivious" and needs to be audited.
+    // The migration tool detected that this method calls [RequiresUnsafe] APIs
+    // (Unsafe.As) but was never in an unsafe context. The author must decide:
+    //   - PROPAGATE: Add [RequiresUnsafe] to this method signature
+    //   - SUPPRESS: Keep the unsafe block and remove this comment after audit
+    //
+    // Original code compiled without any unsafe acknowledgment - a safety gap.
+    [RequiresUnsafe("Migration: Calls Unsafe.As - needs audit to confirm propagate vs suppress")]
+    public static ref TTo ReinterpretAs<TFrom, TTo>(ref TFrom source)
+    {
+        unsafe
+        {
+            return ref System.Runtime.CompilerServices.Unsafe.As<TFrom, TTo>(ref source);
+        }
+    }
+
+    // TODO (MSv2): This is "memory safety oblivious" and needs to be audited.
+    // Decision needed: propagate [RequiresUnsafe] or suppress with safety justification.
+    [RequiresUnsafe("Migration: Calls Unsafe.As - needs audit to confirm propagate vs suppress")]
+    public static TTo[] ReinterpretArray<TFrom, TTo>(TFrom[] array)
+        where TFrom : class
+        where TTo : class
+    {
+        unsafe
+        {
+            return System.Runtime.CompilerServices.Unsafe.As<TFrom[], TTo[]>(ref array);
+        }
+    }
+
+    // TODO (MSv2): This is "memory safety oblivious" and needs to be audited.
+    // Unsafe.Add can go out of bounds - caller obligations are not enforced.
+    [RequiresUnsafe("Migration: Calls Unsafe.Add - needs audit to confirm propagate vs suppress")]
+    public static ref T ElementAtUnchecked<T>(ref T start, int offset)
+    {
+        unsafe
+        {
+            return ref System.Runtime.CompilerServices.Unsafe.Add(ref start, offset);
+        }
+    }
+}
+
+/// <summary>
 /// Demonstrates different propagation scenarios with attributes.
 /// </summary>
 public static class PropagationChain

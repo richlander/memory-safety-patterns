@@ -188,6 +188,66 @@ public static class UnsafeApi
 }
 
 /// <summary>
+/// Demonstrates IMPLICIT UNSAFETY - methods that are semantically unsafe
+/// but don't require unsafe blocks in current C#.
+///
+/// These methods represent the safety gap: dangerous operations that the
+/// compiler cannot track because they don't use pointer syntax.
+/// </summary>
+public static class ImplicitlyUnsafeApi
+{
+    /// <summary>
+    /// Reinterprets a reference as a different type. NO UNSAFE BLOCK REQUIRED.
+    ///
+    /// This is the canonical example of the C# safety gap:
+    /// - Semantically dangerous (can violate type safety)
+    /// - But syntactically "safe" (no pointers = no unsafe required)
+    /// - The name "Unsafe" is just a naming convention, not enforced
+    /// </summary>
+    /// <remarks>
+    /// CALLER OBLIGATIONS (none enforced by compiler!):
+    /// - Types must have compatible memory layouts
+    /// - Misuse leads to undefined behavior, memory corruption, security holes
+    ///
+    /// This method exists to demonstrate the gap - in a future C# with
+    /// MemorySafetyRules, calling Unsafe.As would require an unsafe context.
+    /// </remarks>
+    public static ref TTo ReinterpretAs<TFrom, TTo>(ref TFrom source)
+    {
+        // NO UNSAFE BLOCK - despite performing type-unsafe reinterpretation
+        // This compiles clean in C# today. The compiler has no idea this is dangerous.
+        return ref System.Runtime.CompilerServices.Unsafe.As<TFrom, TTo>(ref source);
+    }
+
+    /// <summary>
+    /// Another example: array reinterpretation without any compiler safety checks.
+    /// </summary>
+    public static TTo[] ReinterpretArray<TFrom, TTo>(TFrom[] array)
+        where TFrom : class
+        where TTo : class
+    {
+        // NO UNSAFE BLOCK - even though this can cause type confusion
+        // A string[] reinterpreted as object[] can lead to ArrayTypeMismatchException
+        // or worse, security vulnerabilities if exploited.
+        return System.Runtime.CompilerServices.Unsafe.As<TFrom[], TTo[]>(ref array);
+    }
+
+    /// <summary>
+    /// Offset arithmetic without bounds checking. NO UNSAFE BLOCK REQUIRED.
+    /// </summary>
+    /// <remarks>
+    /// CALLER OBLIGATIONS (none enforced!):
+    /// - offset must be in bounds of the underlying allocation
+    /// - Going out of bounds is undefined behavior
+    /// </remarks>
+    public static ref T ElementAtUnchecked<T>(ref T start, int offset)
+    {
+        // NO UNSAFE BLOCK - pointer arithmetic without the "unsafe" keyword
+        return ref System.Runtime.CompilerServices.Unsafe.Add(ref start, offset);
+    }
+}
+
+/// <summary>
 /// Demonstrates PROPAGATION CHAINS within and across modules.
 /// </summary>
 public static class PropagationChain
